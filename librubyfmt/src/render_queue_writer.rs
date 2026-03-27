@@ -22,7 +22,7 @@ impl<'src> RenderQueueWriter<'src> {
     }
 
     pub fn write<W: Write>(self, writer: &mut W) -> io::Result<()> {
-        let mut accum = Intermediary::new();
+        let mut accum = Intermediary::with_capacity(self.tokens.len());
         #[cfg(debug_assertions)]
         {
             debug!("first tokens {:?}", self.tokens);
@@ -34,7 +34,7 @@ impl<'src> RenderQueueWriter<'src> {
     /// Convert the render queue to final tokens without writing them.
     /// This is used for extracting heredoc segments.
     pub fn into_tokens(self) -> Vec<ConcreteLineToken<'src>> {
-        let mut accum = Intermediary::new();
+        let mut accum = Intermediary::with_capacity(self.tokens.len());
         Self::render_as(&mut accum, self.tokens);
         accum.into_tokens()
     }
@@ -207,7 +207,7 @@ impl<'src> RenderQueueWriter<'src> {
         let force_single_line =
             !be.any_collapsing_newline_has_heredoc_content() && be.in_string_embexpr();
 
-        let mut tokens = Vec::new();
+        let mut tokens = Vec::with_capacity(be.len() + 2); // +2 for delims
         if !force_single_line
             && (be.is_multiline() || Self::renders_over_max_line_length(accum, &be))
         {
@@ -230,7 +230,7 @@ impl<'src> RenderQueueWriter<'src> {
     ) {
         let must_multiline =
             bcce.any_collapsing_newline_has_heredoc_content() && bcce.in_string_embexpr();
-        let mut tokens = Vec::new();
+        let mut tokens = Vec::with_capacity(bcce.len() + 2); // +2 for delims
         if must_multiline
             || ((bcce.is_multiline() || Self::renders_over_max_line_length(accum, &bcce))
                 && !bcce.in_string_embexpr())
